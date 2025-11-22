@@ -1,0 +1,14 @@
+[workspace]
+members = ["aetos-core", "aetos-macro", "aetos"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["David"]
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"

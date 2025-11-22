@@ -1,0 +1,16 @@
+[package]
+name = "aetos"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[features]
+# Disables label value escaping for maximum performance.
+# Using this feature with labels containing ", \, or newlines
+# will produce invalid Prometheus output.
+no-escaping = []
+
+[dependencies]
+aetos-core = { path = "../aetos-core" }
+aetos-macro = { path = "../aetos-macro" }

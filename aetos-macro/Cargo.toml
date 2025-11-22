@@ -1,0 +1,18 @@
+[package]
+name = "aetos-macro"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+aetos-core = { path = "../aetos-core" }
+
+[dev-dependencies]
+aetos-core = { path = "../aetos-core" }

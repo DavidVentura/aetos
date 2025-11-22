@@ -1,0 +1,14 @@
+[package]
+name = "aetos-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[features]
+# Disables label value escaping for maximum performance.
+# WARNING: Using this feature with labels containing ", \, or newlines
+# will produce invalid Prometheus output.
+no-escaping = []
+
+[dependencies]
