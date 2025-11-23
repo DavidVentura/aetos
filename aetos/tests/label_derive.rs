@@ -1,5 +1,5 @@
-use aetos_core::Label;
-use aetos_macro::Label;
+use aetos::Label;
+use aetos::core::Label as LabelTrait;
 
 #[test]
 fn test_single_field_label() {
@@ -34,6 +34,7 @@ fn test_multi_field_label() {
 }
 
 #[test]
+#[cfg(not(feature = "no-escaping"))]
 fn test_label_escaping() {
     #[derive(Label)]
     struct EscapeLabel {
@@ -49,6 +50,7 @@ fn test_label_escaping() {
 }
 
 #[test]
+#[cfg(not(feature = "no-escaping"))]
 fn test_label_newline_escaping() {
     #[derive(Label)]
     struct NewlineLabel {
@@ -83,9 +85,9 @@ fn test_three_fields_no_trailing_comma() {
     assert!(!result.ends_with(','));
 }
 
-struct MockFormatter<'a, T: Label>(&'a T);
+struct MockFormatter<'a, T: LabelTrait>(&'a T);
 
-impl<'a, T: Label> std::fmt::Display for MockFormatter<'a, T> {
+impl<'a, T: LabelTrait> std::fmt::Display for MockFormatter<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt_labels(f)
     }

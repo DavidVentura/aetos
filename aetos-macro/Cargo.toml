@@ -8,6 +8,9 @@ license.workspace = true
 [lib]
 proc-macro = true
 
+[features]
+no-escaping = ["aetos-core/no-escaping"]
+
 [dependencies]
 syn.workspace = true
 quote.workspace = true

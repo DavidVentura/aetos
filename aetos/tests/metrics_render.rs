@@ -1,5 +1,5 @@
-use aetos_core::PrometheusMetric;
-use aetos_macro::{Label, metrics};
+use aetos::core::PrometheusMetric;
+use aetos::{Label, metrics};
 
 #[test]
 fn test_scalar_counter() {
@@ -207,6 +207,7 @@ fn test_mixed_fields() {
 }
 
 #[test]
+#[cfg(not(feature = "no-escaping"))]
 fn test_label_value_escaping_in_metrics() {
     #[metrics]
     struct TestMetrics {

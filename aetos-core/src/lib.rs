@@ -166,6 +166,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(not(feature = "no-escaping"))]
     fn test_escape_label_value() {
         assert_eq!(escape_label_value("simple"), "simple");
         assert_eq!(escape_label_value("with\"quote"), "with\\\"quote");
@@ -174,6 +175,19 @@ mod tests {
         assert_eq!(
             escape_label_value("all\"three\\\nchars"),
             "all\\\"three\\\\\\nchars"
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "no-escaping")]
+    fn test_escape_label_value_no_escaping() {
+        assert_eq!(escape_label_value("simple"), "simple");
+        assert_eq!(escape_label_value("with\"quote"), "with\"quote");
+        assert_eq!(escape_label_value("with\\backslash"), "with\\backslash");
+        assert_eq!(escape_label_value("with\nnewline"), "with\nnewline");
+        assert_eq!(
+            escape_label_value("all\"three\\\nchars"),
+            "all\"three\\\nchars"
         );
     }
 }

@@ -1,4 +1,4 @@
-use aetos_macro::metrics;
+use aetos::metrics;
 use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 

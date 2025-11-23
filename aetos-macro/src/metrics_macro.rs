@@ -215,7 +215,7 @@ fn generate_display_impl(
 
                 quote! {
                     fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        use aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
+                        use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
 
                         let meta = MetricMetadata {
                             name: #metric_name,
@@ -231,7 +231,7 @@ fn generate_display_impl(
             FieldType::Unspecified => {
                 quote! {
                     fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        use aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
+                        use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
 
                         let meta = MetricMetadata {
                             name: #metric_name,
@@ -264,7 +264,7 @@ fn generate_display_impl(
             }
         }
 
-        impl #impl_generics aetos::core::PrometheusMetric for #name #ty_generics #where_clause {}
+        impl #impl_generics ::aetos::core::PrometheusMetric for #name #ty_generics #where_clause {}
     })
 }
 

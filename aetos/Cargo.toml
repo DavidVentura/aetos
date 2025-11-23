@@ -9,7 +9,7 @@ license.workspace = true
 # Disables label value escaping for maximum performance.
 # Using this feature with labels containing ", \, or newlines
 # will produce invalid Prometheus output.
-no-escaping = []
+no-escaping = ["aetos-core/no-escaping", "aetos-macro/no-escaping"]
 
 [dependencies]
 aetos-core = { path = "../aetos-core" }

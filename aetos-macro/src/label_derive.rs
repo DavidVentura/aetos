@@ -39,14 +39,14 @@ pub fn expand_label_derive(input: DeriveInput) -> Result<TokenStream> {
                 f,
                 "{}=\"{}\"",
                 stringify!(#first_field),
-                aetos::core::escape_label_value(&self.#first_field.to_string())
+                ::aetos::core::escape_label_value(&self.#first_field.to_string())
             )?;
             #(
                 write!(
                     f,
                     ",{}=\"{}\"",
                     stringify!(#rest_fields),
-                    aetos::core::escape_label_value(&self.#rest_fields.to_string())
+                    ::aetos::core::escape_label_value(&self.#rest_fields.to_string())
                 )?;
             )*
             Ok(())
@@ -74,7 +74,7 @@ pub fn expand_label_derive(input: DeriveInput) -> Result<TokenStream> {
     };
 
     Ok(quote! {
-        impl #impl_generics aetos::core::Label for #name #ty_generics #where_clause {
+        impl #impl_generics ::aetos::core::Label for #name #ty_generics #where_clause {
             fn fmt_labels(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 #format_impl
             }
