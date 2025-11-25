@@ -204,7 +204,7 @@ where
                 if std::mem::size_of::<L>() > 0 {
                     write!(f, ",")?;
                 }
-                write!(f, "le=\"{}\"}} {}\n", upper_bound, cumulative_count)?;
+                writeln!(f, "le=\"{}\"}} {}", upper_bound, cumulative_count)?;
             }
 
             write!(f, "{}_bucket{{", meta.name)?;
@@ -212,15 +212,15 @@ where
             if std::mem::size_of::<L>() > 0 {
                 write!(f, ",")?;
             }
-            write!(f, "le=\"+Inf\"}} {}\n", data.count)?;
+            writeln!(f, "le=\"+Inf\"}} {}", data.count)?;
 
             write!(f, "{}_sum{{", meta.name)?;
             label.fmt_labels(f)?;
-            write!(f, "}} {}\n", data.sum)?;
+            writeln!(f, "}} {}", data.sum)?;
 
             write!(f, "{}_count{{", meta.name)?;
             label.fmt_labels(f)?;
-            write!(f, "}} {}\n", data.count)?;
+            writeln!(f, "}} {}", data.count)?;
         }
         Ok(())
     }
