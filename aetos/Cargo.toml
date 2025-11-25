@@ -4,7 +4,12 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-rust-version = "1.85.0"
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "A Rust proc macro library for generating Prometheus metrics rendering code from annotated structs"
+keywords = ["prometheus", "metrics"]
 
 [features]
 # Disables label value escaping for maximum performance.
@@ -13,5 +18,5 @@ rust-version = "1.85.0"
 no-escaping = ["aetos-core/no-escaping", "aetos-macro/no-escaping"]
 
 [dependencies]
-aetos-core = { path = "../aetos-core" }
-aetos-macro = { path = "../aetos-macro" }
+aetos-core = { version = "0.1.0", path = "../aetos-core" }
+aetos-macro = { version = "0.1.0", path = "../aetos-macro" }

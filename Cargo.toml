@@ -6,7 +6,11 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 authors = ["David"]
-license = "MIT OR Apache-2.0"
+license = "MIT"
+repository = "https://github.com/DavidVentura/aetos"
+documentation = "https://docs.rs/aetos"
+homepage = "https://github.com/DavidVentura/aetos"
+rust-version = "1.85.0"
 
 [workspace.dependencies]
 syn = { version = "2.0", features = ["full", "extra-traits"] }
