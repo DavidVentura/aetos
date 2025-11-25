@@ -1,5 +1,5 @@
 use aetos::core::PrometheusMetric;
-use aetos::{Label, metrics};
+use aetos::{Label, define_histogram, metrics};
 
 #[test]
 fn test_scalar_counter() {
@@ -384,4 +384,102 @@ fn test_btreemap_multi_label() {
     assert!(output.contains("# TYPE requests counter\n"));
     assert!(output.contains(r#"requests{region="us-east",zone="1a"} 200"#));
     assert!(output.contains(r#"requests{region="us-west",zone="2b"} 150"#));
+}
+
+#[test]
+fn test_histogram_with_labels() {
+    #[derive(Label, Hash, Eq, PartialEq, Clone, Debug)]
+    struct RequestLabel {
+        method: &'static str,
+        status: u16,
+    }
+
+    define_histogram!(RequestLatency<RequestLabel> = [0.1, 0.5, 1.0]);
+
+    #[metrics]
+    struct TestMetrics {
+        #[histogram(help = "Request latency in seconds")]
+        latency: RequestLatency,
+    }
+
+    let mut m = TestMetrics {
+        latency: RequestLatency::default(),
+    };
+
+    m.latency.observe(
+        RequestLabel {
+            method: "GET",
+            status: 200,
+        },
+        0.25,
+    );
+    m.latency.observe(
+        RequestLabel {
+            method: "GET",
+            status: 200,
+        },
+        0.75,
+    );
+    m.latency.observe(
+        RequestLabel {
+            method: "POST",
+            status: 201,
+        },
+        0.15,
+    );
+
+    let output = m.to_string();
+
+    assert!(output.contains("# HELP latency Request latency in seconds\n"));
+    assert!(output.contains("# TYPE latency histogram\n"));
+
+    // GET 200 observations (0.25 and 0.75)
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.1"} 0"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.5"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="1"} 2"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="+Inf"} 2"#));
+    assert!(output.contains(r#"latency_sum{method="GET",status="200"} 1"#));
+    assert!(output.contains(r#"latency_count{method="GET",status="200"} 2"#));
+
+    // POST 201 observation (0.15)
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.1"} 0"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.5"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="1"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="+Inf"} 1"#));
+    assert!(output.contains(r#"latency_sum{method="POST",status="201"} 0.15"#));
+    assert!(output.contains(r#"latency_count{method="POST",status="201"} 1"#));
+}
+
+#[test]
+fn test_histogram_unlabeled() {
+    define_histogram!(ResponseTime<()> = [0.05, 0.1, 0.5]);
+
+    #[metrics]
+    struct TestMetrics {
+        #[histogram(help = "Response time distribution")]
+        response_time: ResponseTime,
+    }
+
+    let mut m = TestMetrics {
+        response_time: ResponseTime::default(),
+    };
+
+    m.response_time.observe((), 0.03);
+    m.response_time.observe((), 0.08);
+    m.response_time.observe((), 0.45);
+
+    let output = m.to_string();
+
+    assert!(output.contains("# HELP response_time Response time distribution\n"));
+    assert!(output.contains("# TYPE response_time histogram\n"));
+
+    // Check bucket counts (cumulative)
+    assert!(output.contains(r#"response_time_bucket{le="0.05"} 1"#));
+    assert!(output.contains(r#"response_time_bucket{le="0.1"} 2"#));
+    assert!(output.contains(r#"response_time_bucket{le="0.5"} 3"#));
+    assert!(output.contains(r#"response_time_bucket{le="+Inf"} 3"#));
+
+    // Check sum and count
+    assert!(output.contains(r#"response_time_sum{} 0.56"#));
+    assert!(output.contains(r#"response_time_count{} 3"#));
 }

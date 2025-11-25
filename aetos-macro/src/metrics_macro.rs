@@ -6,6 +6,7 @@ use syn::{Data, DeriveInput, Error, Expr, ExprLit, Fields, Lit, Meta, Result, pa
 enum MetricType {
     Counter,
     Gauge,
+    Histogram,
 }
 
 #[derive(Debug)]
@@ -59,9 +60,11 @@ pub fn expand_metrics_macro(args: TokenStream, input: TokenStream) -> Result<Tok
         && let Fields::Named(ref mut fields) = data.fields
     {
         for field in &mut fields.named {
-            field
-                .attrs
-                .retain(|attr| !attr.path().is_ident("counter") && !attr.path().is_ident("gauge"));
+            field.attrs.retain(|attr| {
+                !attr.path().is_ident("counter")
+                    && !attr.path().is_ident("gauge")
+                    && !attr.path().is_ident("histogram")
+            });
         }
     }
 
@@ -129,6 +132,9 @@ fn parse_field(field: &syn::Field) -> Result<Option<MetricField>> {
         } else if attr.path().is_ident("gauge") {
             metric_type = Some(MetricType::Gauge);
             parse_metric_attrs(attr, &mut help, &mut name_override, &mut label_override)?;
+        } else if attr.path().is_ident("histogram") {
+            metric_type = Some(MetricType::Histogram);
+            parse_metric_attrs(attr, &mut help, &mut name_override, &mut label_override)?;
         }
     }
 
@@ -142,6 +148,28 @@ fn parse_field(field: &syn::Field) -> Result<Option<MetricField>> {
     })?;
 
     let ident = field.ident.as_ref().unwrap().clone();
+
+    // Validate that histograms don't use the label attribute
+    if let MetricType::Histogram = metric_type {
+        if label_override.is_some() {
+            return Err(Error::new_spanned(
+                field,
+                "histogram metrics do not support 'label' attribute - labels are defined in the histogram type (e.g. Histogram<MyLabel, N>)"
+            ));
+        }
+    }
+
+    // Validate that known scalar primitives don't use the label attribute
+    if !matches!(metric_type, MetricType::Histogram) {
+        if label_override.is_some() && is_known_scalar_primitive(&field.ty) {
+            return Err(Error::new_spanned(
+                field,
+                "the 'label' attribute is not supported on scalar types like u64, f64, etc. \
+                 Labels are only supported on collection types that implement IntoIterator. \
+                 To use labels, change this field to Vec, HashMap, BTreeMap, or another iterable collection."
+            ));
+        }
+    }
 
     let field_type = match label_override {
         Some(label_name) => FieldType::SingleLabel {
@@ -157,6 +185,24 @@ fn parse_field(field: &syn::Field) -> Result<Option<MetricField>> {
         help,
         name_override,
     }))
+}
+
+/// Checks if a type is a known scalar primitive that doesn't support labels.
+/// Returns true for common numeric primitives: u64, f64, i32, etc.
+/// Note: This doesn't catch all scalar types (custom wrappers, type aliases),
+/// but catches the most common cases.
+fn is_known_scalar_primitive(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(last_segment) = type_path.path.segments.last() {
+            let type_name = last_segment.ident.to_string();
+            return matches!(
+                type_name.as_str(),
+                "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" |
+                "f64" | "f32" | "usize" | "isize" | "bool"
+            );
+        }
+    }
+    false
 }
 
 fn parse_metric_attrs(
@@ -205,14 +251,11 @@ fn generate_display_impl(
         let metric_type_str = match field.metric_type {
             MetricType::Counter => "counter",
             MetricType::Gauge => "gauge",
+            MetricType::Histogram => "histogram",
         };
 
-        let method_impl = match &field.field_type {
-            FieldType::SingleLabel { label_name } => {
-                let label_name = label_name
-                    .clone()
-                    .unwrap_or_else(|| field.ident.to_string());
-
+        let method_impl = match field.metric_type {
+            MetricType::Histogram => {
                 quote! {
                     fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                         use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
@@ -220,30 +263,52 @@ fn generate_display_impl(
                         let meta = MetricMetadata {
                             name: #metric_name,
                             help: #help,
-                            kind: #metric_type_str,
+                            kind: "histogram",
                         };
 
                         let wrapper = MetricWrapper(&self.#field_ident);
-                        wrapper.render_with_label_attr(f, &meta, #label_name)
+                        wrapper.render_histogram(f, &meta)
                     }
                 }
             }
-            FieldType::Unspecified => {
-                quote! {
-                    fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
+            _ => match &field.field_type {
+                FieldType::SingleLabel { label_name } => {
+                    let label_name = label_name
+                        .clone()
+                        .unwrap_or_else(|| field.ident.to_string());
 
-                        let meta = MetricMetadata {
-                            name: #metric_name,
-                            help: #help,
-                            kind: #metric_type_str,
-                        };
+                    quote! {
+                        fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                            use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
 
-                        let wrapper = MetricWrapper(&self.#field_ident);
-                        wrapper.render_with_struct_key(f, &meta)
+                            let meta = MetricMetadata {
+                                name: #metric_name,
+                                help: #help,
+                                kind: #metric_type_str,
+                            };
+
+                            let wrapper = MetricWrapper(&self.#field_ident);
+                            wrapper.render_with_label_attr(f, &meta, #label_name)
+                        }
                     }
                 }
-            }
+                FieldType::Unspecified => {
+                    quote! {
+                        fn #method_name(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                            use ::aetos::core::{MetricWrapper, MetricMetadata, RenderScalarFallback};
+
+                            let meta = MetricMetadata {
+                                name: #metric_name,
+                                help: #help,
+                                kind: #metric_type_str,
+                            };
+
+                            let wrapper = MetricWrapper(&self.#field_ident);
+                            wrapper.render_with_struct_key(f, &meta)
+                        }
+                    }
+                }
+            },
         };
 
         fmt_methods.push(method_impl);
