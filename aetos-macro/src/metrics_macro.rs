@@ -56,15 +56,15 @@ pub fn expand_metrics_macro(args: TokenStream, input: TokenStream) -> Result<Tok
         }
     }
 
-    if let Data::Struct(ref mut data) = input.data
-        && let Fields::Named(ref mut fields) = data.fields
-    {
-        for field in &mut fields.named {
-            field.attrs.retain(|attr| {
-                !attr.path().is_ident("counter")
-                    && !attr.path().is_ident("gauge")
-                    && !attr.path().is_ident("histogram")
-            });
+    if let Data::Struct(ref mut data) = input.data {
+        if let Fields::Named(ref mut fields) = data.fields {
+            for field in &mut fields.named {
+                field.attrs.retain(|attr| {
+                    !attr.path().is_ident("counter")
+                        && !attr.path().is_ident("gauge")
+                        && !attr.path().is_ident("histogram")
+                });
+            }
         }
     }
 
@@ -94,23 +94,26 @@ fn parse_struct_attrs(args: TokenStream) -> Result<Option<String>> {
             for nested in list.parse_args_with(
                 syn::punctuated::Punctuated::<Meta, syn::Token![,]>::parse_terminated,
             )? {
-                if let Meta::NameValue(nv) = nested
-                    && nv.path.is_ident("prefix")
-                    && let Expr::Lit(ExprLit {
-                        lit: Lit::Str(s), ..
-                    }) = &nv.value
-                {
-                    return Ok(Some(s.value()));
+                if let Meta::NameValue(nv) = nested {
+                    if nv.path.is_ident("prefix") {
+                        if let Expr::Lit(ExprLit {
+                            lit: Lit::Str(s), ..
+                        }) = &nv.value
+                        {
+                            return Ok(Some(s.value()));
+                        }
+                    }
                 }
             }
         }
         Meta::NameValue(nv) => {
-            if nv.path.is_ident("prefix")
-                && let Expr::Lit(ExprLit {
+            if nv.path.is_ident("prefix") {
+                if let Expr::Lit(ExprLit {
                     lit: Lit::Str(s), ..
                 }) = &nv.value
-            {
-                return Ok(Some(s.value()));
+                {
+                    return Ok(Some(s.value()));
+                }
             }
         }
         _ => {}

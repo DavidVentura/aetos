@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+rust-version = "1.85.0"
 
 [features]
 # Disables label value escaping for maximum performance.
