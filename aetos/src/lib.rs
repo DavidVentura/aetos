@@ -6,6 +6,7 @@
 //!
 //! ```
 //! use aetos::{metrics, Label};
+//! use std::collections::HashMap;
 //!
 //! #[derive(Label)]
 //! struct RequestLabels<'a> {
@@ -13,15 +14,15 @@
 //!     status: u32,
 //! }
 //!
-//! #[metrics]
+//! #[metrics(prefix = "myapp")]  // Optional prefix for all metrics
 //! struct MyMetrics<'a> {
 //!     // Scalar metric, no labels
-//!     #[counter(help = "Total requests")]
+//!     #[counter(name = "requests_total", help = "Total requests")]  // name is optional
 //!     requests: u64,
 //!
-//!     // Vec metric, single label shorthand
+//!     // HashMap metric, single label shorthand
 //!     #[counter(help = "Events by type", label = "event_type")]
-//!     events: Vec<(String, u64)>,
+//!     events: HashMap<String, u64>,
 //!
 //!     // Vec metric, multiple labels requires a Label type
 //!     #[counter(help = "HTTP requests by method and status")]
@@ -30,10 +31,10 @@
 //!
 //! let metrics = MyMetrics {
 //!     requests: 1000,
-//!     events: vec![
-//!         ("stake".to_string(), 10),
-//!         ("unstake".to_string(), 5),
-//!     ],
+//!     events: HashMap::from([
+//!         ("add".to_string(), 10),
+//!         ("remove".to_string(), 5),
+//!     ]),
 //!     http_requests: vec![
 //!         (RequestLabels { method: "GET", status: 200 }, 150),
 //!         (RequestLabels { method: "POST", status: 404 }, 3),
@@ -45,18 +46,29 @@
 //!
 //! This outputs:
 //! ```text
-//! # HELP requests Total requests
-//! # TYPE requests counter
-//! requests 1000
-//! # HELP events Events by type
-//! # TYPE events counter
-//! events{event_type="stake"} 10
-//! events{event_type="unstake"} 5
-//! # HELP http_requests HTTP requests by method and status
-//! # TYPE http_requests counter
-//! http_requests{method="GET",status="200"} 150
-//! http_requests{method="POST",status="404"} 3
+//! # HELP myapp_requests_total Total requests
+//! # TYPE myapp_requests_total counter
+//! myapp_requests_total 1000
+//! # HELP myapp_events Events by type
+//! # TYPE myapp_events counter
+//! myapp_events{event_type="add"} 10
+//! myapp_events{event_type="remove"} 5
+//! # HELP myapp_http_requests HTTP requests by method and status
+//! # TYPE myapp_http_requests counter
+//! myapp_http_requests{method="GET",status="200"} 150
+//! myapp_http_requests{method="POST",status="404"} 3
 //! ```
+//!
+//! ## Collection Types
+//!
+//! Labeled metrics accept anything that implements `IntoIterator<&(K, V)>` or `IntoIterator<(&K, &V)>` (Vec, HashMap, BTreeMap, slices, etc.).
+//!
+//! - Single label: `K` implements `Display`
+//! - Multiple labels: `K` implements `Label`
+//!
+//! ## Override Metric Names
+//!
+//! Use the `name` attribute to export a different metric name than the field name (see Quick Start example).
 //!
 //! ## Histograms
 //!
