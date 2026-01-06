@@ -77,7 +77,7 @@ impl<const N: usize> Default for HistogramData<N> {
 /// use aetos_core::validate_histogram_buckets;
 ///
 /// const _: () = {
-///     const BUCKETS: [f64; 3] = [1.0, 0.5, 2.0];  // Out of order!
+///     const BUCKETS: [f64; 3] = [1.0, 0.5, 2.0];
 ///     validate_histogram_buckets(&BUCKETS);
 /// };
 /// ```
@@ -103,6 +103,10 @@ impl<L: Hash + Eq, const N: usize> Histogram<L, N> {
             buckets,
             data: HashMap::new(),
         }
+    }
+
+    pub fn zero_initialize(&mut self, label: L) {
+        self.data.entry(label).or_default();
     }
 
     pub fn observe(&mut self, label: L, value: f64) {
