@@ -204,7 +204,7 @@ where
                 if std::mem::size_of::<L>() > 0 {
                     write!(f, ",")?;
                 }
-                writeln!(f, "le=\"{}\"}} {}", upper_bound, cumulative_count)?;
+                writeln!(f, "le=\"{:.3}\"}} {}", upper_bound, cumulative_count)?;
             }
 
             write!(f, "{}_bucket{{", meta.name)?;

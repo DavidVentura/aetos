@@ -434,17 +434,17 @@ fn test_histogram_with_labels() {
     assert!(output.contains("# TYPE latency histogram\n"));
 
     // GET 200 observations (0.25 and 0.75)
-    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.1"} 0"#));
-    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.5"} 1"#));
-    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="1"} 2"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.100"} 0"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="0.500"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="1.000"} 2"#));
     assert!(output.contains(r#"latency_bucket{method="GET",status="200",le="+Inf"} 2"#));
     assert!(output.contains(r#"latency_sum{method="GET",status="200"} 1"#));
     assert!(output.contains(r#"latency_count{method="GET",status="200"} 2"#));
 
     // POST 201 observation (0.15)
-    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.1"} 0"#));
-    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.5"} 1"#));
-    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="1"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.100"} 0"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="0.500"} 1"#));
+    assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="1.000"} 1"#));
     assert!(output.contains(r#"latency_bucket{method="POST",status="201",le="+Inf"} 1"#));
     assert!(output.contains(r#"latency_sum{method="POST",status="201"} 0.15"#));
     assert!(output.contains(r#"latency_count{method="POST",status="201"} 1"#));
@@ -474,9 +474,9 @@ fn test_histogram_unlabeled() {
     assert!(output.contains("# TYPE response_time histogram\n"));
 
     // Check bucket counts (cumulative)
-    assert!(output.contains(r#"response_time_bucket{le="0.05"} 1"#));
-    assert!(output.contains(r#"response_time_bucket{le="0.1"} 2"#));
-    assert!(output.contains(r#"response_time_bucket{le="0.5"} 3"#));
+    assert!(output.contains(r#"response_time_bucket{le="0.050"} 1"#));
+    assert!(output.contains(r#"response_time_bucket{le="0.100"} 2"#));
+    assert!(output.contains(r#"response_time_bucket{le="0.500"} 3"#));
     assert!(output.contains(r#"response_time_bucket{le="+Inf"} 3"#));
 
     // Check sum and count
